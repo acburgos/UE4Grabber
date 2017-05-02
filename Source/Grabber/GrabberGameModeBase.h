@@ -5,6 +5,9 @@
 #include "GameFramework/GameModeBase.h"
 #include "GrabberGameModeBase.generated.h"
 
+#define E0_LOG_CHECK
+//#define E0_DEBUG
+
 /**
  * 
  */

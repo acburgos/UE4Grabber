@@ -3,8 +3,8 @@
 #include "Grabber.h"
 #include "GrabberComp.h"
 
+#define OUT
 
-// Sets default values for this component's properties
 UGrabberComp::UGrabberComp()
 {
 	// Set this component to be initialized when the game starts, and to be ticked every frame.  You can turn these features
@@ -12,58 +12,105 @@ UGrabberComp::UGrabberComp()
     bWantsBeginPlay = true;
 	PrimaryComponentTick.bCanEverTick = true;
 
-	// ...
+    PhysicsHandle = nullptr;
+    InputComponent = nullptr;
 }
 
-
-// Called when the game starts
 void UGrabberComp::BeginPlay()
 {
 	Super::BeginPlay();
-
-#define OUT
+    FindPhysicsHandleComponent();
+    SetupInputComponent();
 }
 
+void UGrabberComp::FindPhysicsHandleComponent()
+{
+        // Look for attached  Physics Handle
+    PhysicsHandle = GetOwner()->FindComponentByClass<UPhysicsHandleComponent>();
+    if (PhysicsHandle != nullptr)
+    {
 
-// Called every frame
+    }
+    else
+    {
+        UE_LOG(LogTemp, Error, TEXT("Physics Handle component missing in the Owner Actor"));
+    }
+}
+
+void UGrabberComp::SetupInputComponent()
+{
+    InputComponent = GetOwner()->FindComponentByClass<UInputComponent>();
+    if (InputComponent != nullptr)
+    {
+        // Bind the input axis
+        InputComponent->BindAction("Grab", IE_Pressed, this, &UGrabberComp::Grab);
+        InputComponent->BindAction("Grab", IE_Released, this, &UGrabberComp::Release);
+    }
+    else
+    {
+        UE_LOG(LogTemp, Error, TEXT("Input Component missing in the Owner Actor"));
+    }
+}
+
+void UGrabberComp::Grab()
+{
+    UE_LOG(LogTemp, Warning, TEXT("Grab Pressed"));
+    
+    //Line Trace
+    GetFirstPhysicsBodyInReach();
+
+    // Try and reach any actor with physics body collision channel set
+
+    // If we hit something then attach a physics handle
+
+    // TODO attach physics handle
+}
+
+void UGrabberComp::Release()
+{
+    UE_LOG(LogTemp, Warning, TEXT("Grab Released"));
+    //TODO release physics handle
+}
+
 void UGrabberComp::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
-	// Get player viewpoint this tick
+    // if the physics handle is attached
+        //move the object that we're holding
+
+}
+
+FHitResult UGrabberComp::GetFirstPhysicsBodyInReach() const
+{
+    // Get player viewpoint this tick
     FVector local_actor_location;
     FRotator local_actor_rotation;
-    GetWorld()->GetFirstPlayerController()->GetPlayerViewPoint( OUT local_actor_location, OUT local_actor_rotation);
-
-    //UE_LOG(LogTemp, Warning, TEXT("Location: %s and Rotation: %s"), 
-    //       *local_actor_location.ToString(), 
-    //       *local_actor_rotation.ToString()
-    //);
+    GetWorld()->GetFirstPlayerController()->GetPlayerViewPoint(OUT local_actor_location, OUT local_actor_rotation);
 
     // Debug Line Trace (Just visualizing)
     FVector LineTraceEnd = local_actor_location + local_actor_rotation.Vector() * LineTraceReach;
 
-    DrawDebugLine(
-        GetWorld(),
-        local_actor_location,
-        LineTraceEnd,
-        FColor(255.0f, 0 ,0),
-        false,
-        0.f,
-        0.f,
-        2.0f
-        );
+    //DrawDebugLine(
+    //    GetWorld(),
+    //    local_actor_location,
+    //    LineTraceEnd,
+    //    FColor(255.0f, 0, 0),
+    //    false,
+    //    0.f,
+    //    0.f,
+    //    2.0f
+    //);
 
     // Ray-cast
-
     FCollisionQueryParams local_params = FCollisionQueryParams(FName(TEXT("")), false, GetOwner());
 
     FHitResult hit;
-    GetWorld()->LineTraceSingleByObjectType(
-        OUT hit, 
-        local_actor_location, 
-        LineTraceEnd, 
-        FCollisionObjectQueryParams(ECollisionChannel::ECC_PhysicsBody), 
+    bool hitted = GetWorld()->LineTraceSingleByObjectType(
+        OUT hit,
+        local_actor_location,
+        LineTraceEnd,
+        FCollisionObjectQueryParams(ECollisionChannel::ECC_PhysicsBody),
         local_params
     );
 
@@ -74,5 +121,6 @@ void UGrabberComp::TickComponent(float DeltaTime, ELevelTick TickType, FActorCom
     {
         UE_LOG(LogTemp, Warning, TEXT("Line trace hit: %s"), *(ActorHit->GetName()));
     }
+    return hit;
 }
 

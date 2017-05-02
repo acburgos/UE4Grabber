@@ -24,4 +24,21 @@ protected:
 private:
     UPROPERTY(EditAnywhere)
     float LineTraceReach = 80.0f;
+
+    UPhysicsHandleComponent* PhysicsHandle;
+
+    UInputComponent* InputComponent;
+
+    // Ray-cast and grab what it hits
+    void Grab();
+    void Release();
+
+    // Find (assumed) attached physics handle component
+    void FindPhysicsHandleComponent();
+
+    //Setup (assumed) attached input component
+    void SetupInputComponent();
+
+    // Return hit for first physics body in reach
+    FHitResult GetFirstPhysicsBodyInReach() const;
 };

@@ -57,28 +57,50 @@ void UGrabberComp::Grab()
     UE_LOG(LogTemp, Warning, TEXT("Grab Pressed"));
     
     //Line Trace
-    GetFirstPhysicsBodyInReach();
-
-    // Try and reach any actor with physics body collision channel set
-
+    FHitResult local_result = GetFirstPhysicsBodyInReach();
+    auto ComponentToGrab = local_result.GetComponent();
+    auto ActorHit = local_result.GetActor();
     // If we hit something then attach a physics handle
-
-    // TODO attach physics handle
+    if (ActorHit != nullptr)
+    {
+        // attach physics handle
+        PhysicsHandle->GrabComponent(
+            ComponentToGrab,
+            NAME_None,
+            ComponentToGrab->GetOwner()->GetActorLocation(),
+            true
+        );
+    }
 }
 
 void UGrabberComp::Release()
 {
     UE_LOG(LogTemp, Warning, TEXT("Grab Released"));
     //TODO release physics handle
+    if (PhysicsHandle->GrabbedComponent != nullptr)
+    {
+        PhysicsHandle->ReleaseComponent();
+    }
 }
 
 void UGrabberComp::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
-    // if the physics handle is attached
-        //move the object that we're holding
+    // Get player viewpoint this tick
+    FVector local_actor_location;
+    FRotator local_actor_rotation;
+    GetWorld()->GetFirstPlayerController()->GetPlayerViewPoint(OUT local_actor_location, OUT local_actor_rotation);
 
+    // Debug Line Trace (Just visualizing)
+    FVector LineTraceEnd = local_actor_location + local_actor_rotation.Vector() * LineTraceReach;
+
+    // if the physics handle is attached
+    if (PhysicsHandle->GrabbedComponent != nullptr)
+    {
+        //move the object that we're holding
+        PhysicsHandle->SetTargetLocation(LineTraceEnd);
+    }
 }
 
 FHitResult UGrabberComp::GetFirstPhysicsBodyInReach() const
@@ -113,14 +135,6 @@ FHitResult UGrabberComp::GetFirstPhysicsBodyInReach() const
         FCollisionObjectQueryParams(ECollisionChannel::ECC_PhysicsBody),
         local_params
     );
-
-    //See what we hit
-
-    AActor* ActorHit = hit.GetActor();
-    if (ActorHit != nullptr)
-    {
-        UE_LOG(LogTemp, Warning, TEXT("Line trace hit: %s"), *(ActorHit->GetName()));
-    }
     return hit;
 }
 
